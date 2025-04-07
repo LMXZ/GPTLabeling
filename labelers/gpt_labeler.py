@@ -40,6 +40,4 @@ class GPTLabeler():
             ],
         )
 
-        print(response.status)
-
-        print(response.output_text)
+        return int(response.output_text)
