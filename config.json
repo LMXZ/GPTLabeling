@@ -1,0 +1,12 @@
+{
+    "proxy": {
+        "http": "http://localhost:7890",
+        "https": "http://localhost:7890"
+    },
+    "selected_api_group": "4o",
+    "api_groups": {
+        "4o": [
+            "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"
+        ]
+    }
+}
