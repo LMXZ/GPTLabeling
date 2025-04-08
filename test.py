@@ -1,22 +1,26 @@
-from labelers.gpt_labeler import GPTLabeler
+from labelers.gpt_labeler import GPTLabeler, GPTCoTLabeler
 from utils.std import *
 from utils.config import *
 import requests
 import datetime
 
-data = json.load(open('test_data/reid_raw.json'))
+data = json.load(open('test_data/reid_raw.json'))[-4:]
 
 texts = []
 images = []
 
 for i in data:
-    print(i['id'])
     texts += i['captions']
     images.append('test_data/' + i['file_path'])
 
-labeler = GPTLabeler()
+# for i in texts:
+#     print(i)
 
-ans = [[labeler.label(i, j) for j in texts] for i in images]
+labeler = GPTCoTLabeler()
 
-for i in ans:
-    print(i)
+print(labeler.label(images[0], texts[0]))
+print(labeler.label(images[0], texts[-1]))
+
+print(labeler.label(images[-1], texts[0]))
+print(labeler.label(images[-1], texts[-1]))
+
