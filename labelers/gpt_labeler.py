@@ -78,14 +78,21 @@ The scoring criteria are as follows:
 -- 0~1: Almost no match.
 -- 2: The text describes most of the features of the image.
 -- 3: The text covers almost all the features of the image.'''
-
+        content = []
+        for i, fp in enumerate(file_path):
+            content += [
+                {"type": "input_text", "text": f"image{i}:\n"},
+                {"type": "input_image", "image_url": f"data:image/jpeg;base64,{image_to_base64(fp)}" },
+                {"type": "input_text", "text": "\n"},
+            ]
+        for i in description:
+            content.append({"type": "input_text", "text": f'"{i}"\n'})
         response = client.responses.create(
             model="gpt-4o",
             input=[
                 {
                     "role": "user",
-                    "content": [
-                        {"type": "input_image", "image_url": f"data:image/jpeg;base64,{image_to_base64(file_path)}" },
+                    "content": content + [
                         {"type": "input_text", "text": prompt_user},
                     ],
                 }
@@ -98,50 +105,71 @@ The scoring criteria are as follows:
                     "schema": {
                         "type": "object",
                         "properties": {
-                            "part1_estimation": {
-                                "type": "object",
-                                "description": "the estimation process of part 1",
-                                "properties": {
-                                    "text_features": {
-                                        "type": "array",
-                                        "description": "features present in the text, including gender, hairstyle, hair color, skin color, body shape, age, tops, bottoms, shoes, hats, carrying items, etc.",
-                                        "items": {
-                                            "type": "object",
-                                            "properties": {
-                                                "feature_description": {
-                                                    "type": "string",
-                                                    "description": "the description of one feature in the text"
+                            "text_analysis": {
+                                "type": "array",
+                                "description": "text analysis of all texts",
+                                "items": {
+                                    "type": "object",
+                                    "description": "text analysis of a text",
+                                    "properties": {
+                                        "feature_analysis": {
+                                            "type": "array",
+                                            "description": "features presented in the text, including gender, hairstyle, hair color, skin color, body shape, age, tops, bottoms, shoes, hats, carrying items, etc. Each list item contains only ONE feature above.",
+                                            "items": {
+                                                "type": "object",
+                                                "description": "feature analysis of a feature item of the text",
+                                                "properties": {
+                                                    "feature_desciption": {
+                                                        "type": "string",
+                                                        "description": "the description of one feature in the text"
+                                                    },
+                                                    "presentation": {
+                                                        "type": "array",
+                                                        "description": "indicates if this text feature item presented in each image",
+                                                        "items": {
+                                                            "type": "boolean",
+                                                            "description": "indicates if this text feature item presented in an image"
+                                                        }
+                                                    }
                                                 },
-                                                "presented_in_the_image": {
-                                                    "type": "boolean",
-                                                    "description": "is this feature presented in the image?"
-                                                }
-                                            },
-                                            "required": ["feature_description", "presented_in_the_image"],
-                                            "additionalProperties": False
+                                                "required": ["feature_desciption", "presentation"],
+                                                "additionalProperties": False
+                                            }
+                                        },
+                                        "score": {
+                                            "type": "array",
+                                            "description": "The matching score between the text and each image",
+                                            "items": {
+                                                "type": "object",
+                                                "description": "The matching score between the text and an image",
+                                                "properties": {
+                                                    "part1_score": {
+                                                        "type": "integer",
+                                                        "description": "The part1 matching score between the text and an image",
+                                                        "enum": list(range(8))
+                                                    },
+                                                    "part2_score": {
+                                                        "type": "integer",
+                                                        "description": "The part2 matching score between the text and an image",
+                                                        "enum": list(range(4))
+                                                    },
+                                                    "total_score": {
+                                                        "type": "integer",
+                                                        "description": "The sum of part1 and part2",
+                                                        "enum": list(range(11))
+                                                    }
+                                                },
+                                                "required": ["part1_score", "part2_score", "total_score"],
+                                                "additionalProperties": False,
+                                            }
                                         }
                                     },
-                                    "score": {
-                                        "type": "integer",
-                                        "description": "the score of this part",
-                                        "enum": list(range(8))
-                                    }
-                                },
-                                "required": ["text_features", "score"],
-                                "additionalProperties": False
-                            },
-                            "part2_score": {
-                                "type": "integer",
-                                "description": "score of part 2",
-                                "enum": list(range(4))
-                            },
-                            "total_score": {
-                                "type": "integer",
-                                "description": "the sum of the score of the 2 parts",
-                                "enum": list(range(11))
+                                    "required": ["feature_analysis", "score"],
+                                    "additionalProperties": False,
+                                }
                             }
                         },
-                        "required": ["part1_estimation", "part2_score", "total_score"],
+                        "required": ["text_analysis"],
                         "additionalProperties": False,
                     },
                     "strict": True,
@@ -152,6 +180,11 @@ The scoring criteria are as follows:
 
         response = json.loads(response)
 
-        print(response)
+        json.dump(response, open('log.json', 'w'))
 
-        return int(response['total_score'])
+        res = []
+
+        for i in response["text_analysis"]:
+            res.append([j["total_score"] for j in i["score"]])
+
+        return res
