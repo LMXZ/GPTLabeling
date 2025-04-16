@@ -4,7 +4,7 @@ from utils.config import *
 import requests
 import datetime
 
-data = json.load(open('test_data/reid_raw.json'))
+data = json.load(open('test_data/reid_raw.json'))[:8]
 
 texts = []
 images = []
@@ -16,7 +16,7 @@ for i in data:
 
 labeler = GPTLabeler()
 
-ans = [[labeler.label(i, j) for j in texts] for i in images]
+ans = [labeler.label(i, texts) for i in images]
 
 for i in ans:
     print(i)
