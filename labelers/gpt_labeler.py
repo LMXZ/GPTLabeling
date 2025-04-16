@@ -6,6 +6,7 @@ from utils.config import *
 import httpx
 from utils.decos import NoValidAPIKey, TryAPIKeysUntilSuccess
 import base64
+from utils.shifter import Shifter
 
 def image_to_base64(image_path):
     with open(image_path, "rb") as img_file:
@@ -18,16 +19,22 @@ def select_api_key(api_keys: List[str]):
 
 class GPTLabeler(Labeler):
     def __init__(self, conf=config) -> None:
-        self.proxy = conf['proxy']['http']
+        self.proxy = conf['proxy']['https']
+        self.model = conf['model']
+        self.api = []
+        for k, v in conf['accesses'].items():
+            for i in v['api']:
+                self.api.append((v['base_url'], i))
 
-    @TryAPIKeysUntilSuccess(config['api_groups'][config['selected_api_group']])
-    def label(self, file_path: str, description: str, api_key: str=''):
-        if api_key == '':
-            api_key = self.api_keys[0]
-        client = OpenAI(api_key=api_key, http_client=httpx.Client(proxy=self.proxy), base_url="https://xiaoai.plus/v1")
+    @TryAPIKeysUntilSuccess()
+    def label(self, file_path: str, description: str, api_key: str=('', '')):
+        client = OpenAI(api_key=api_key[1], http_client=httpx.Client(proxy=self.proxy), base_url=api_key[0])
+        print(api_key)
         texts = '\n'.join(['"' + i + '"' for i in description])
         response = client.chat.completions.create(
             model="gpt-4o",
+            temperature=0,
+            top_p=1,
             messages=[
                 {
                     "role": "user",
@@ -36,7 +43,7 @@ class GPTLabeler(Labeler):
                         {"type": "text", "text":
                         f'''{texts} How closely does these texts match the image?
 Please rate it on a scale of 0 to 100.
-The score is divided into two parts, 70 points for the first part and 3 points for the second part.
+The score is divided into two parts, 70 points for the first part and 30 points for the second part.
 The score for the first part is: 70*(the number of features in the text that can be found in the image/the total number of features that appear in the text).
 The score for the second part indicates the level of detail of the text description, 30 points for very detailed, 0 points for completely irrelevant.
 '''                     
@@ -72,7 +79,7 @@ The score for the second part indicates the level of detail of the text descript
                                                     },
                                                     "presented": {
                                                         "type": "boolean",
-                                                        "description": "is this feature persented in the image?"
+                                                        "description": "does this feature match the person in the image?"
                                                     }
                                                 }
                                             }
@@ -97,5 +104,4 @@ The score for the second part indicates the level of detail of the text descript
 
         res0 = json.loads(response.choices[0].message.function_call.arguments)["analysis"]
         res = [i['part_1_score'] + i['part_2_score'] for i in res0]
-        print(res)
-        return res
+        return res, res0

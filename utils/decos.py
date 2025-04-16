@@ -38,16 +38,12 @@ class NoValidAPIKey(Exception):
     pass
 
 class TryAPIKeysUntilSuccess:
-    def __init__(self, api_keys=[], remove_bad_api_keys=False) -> None:
-        self.api_keys = api_keys
+    def __init__(self, remove_bad_api_keys=True) -> None:
         self.remove_bad_api_keys = remove_bad_api_keys
 
     def __call__(self, func: Callable):
         def res_func(*args, **kwargs):
-            if 'api_key' in kwargs.keys():
-                api_keys: List[str] = kwargs['api_key']
-            else:
-                api_keys = self.api_keys
+            api_keys: List[str] = args[0].api
             items_to_delete = []
             for i, api_key in enumerate(api_keys):
                 success = False
@@ -79,7 +75,8 @@ class TryAPIKeysUntilSuccess:
                 items_to_delete.reverse()
                 for i in items_to_delete:
                     api_keys.pop(i)
-            
+            xx = api_keys.pop(0)
+            api_keys.append(xx)
             if success:
                 return res
             else:
