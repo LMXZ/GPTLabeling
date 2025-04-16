@@ -61,12 +61,12 @@ Output only their probability, each on a separate line, do not output anything e
 class GPTCoTLabeler(Labeler):
     def __init__(self, conf=config) -> None:
         self.proxy = conf['proxy']['http']
+        self.base_url = conf['base_url']
+        self.model = conf['model']
 
     @TryAPIKeysUntilSuccess(config['api_groups'][config['selected_api_group']])
     def label(self, file_path: str, description: str, api_key: str=''):
-        if api_key == '':
-            api_key = self.api_keys[0]
-        client = OpenAI(api_key=api_key, http_client=httpx.Client(proxy=self.proxy))
+        client = OpenAI(api_key=api_key, http_client=httpx.Client(proxy=self.proxy) if self.proxy else None, base_url=self.base_url)
         prompt_user = f'''"{description}" To what extent does this text match the person in the image?
 Give their scores (0~10).
 The scoring criteria are as follows:
@@ -87,100 +87,133 @@ The scoring criteria are as follows:
             ]
         for i in description:
             content.append({"type": "input_text", "text": f'"{i}"\n'})
-        response = client.responses.create(
-            model="gpt-4o",
-            input=[
+        response = client.chat.completions.create(
+            model=self.model,
+            messages=[
                 {
                     "role": "user",
-                    "content": content + [
-                        {"type": "input_text", "text": prompt_user},
-                    ],
+                    "content": "solve equation 3x + 1 = 10, output solving steps in json format"
                 }
             ],
-            text={
-                "format": {
-                    "type": "json_schema",
-                    "name": "matching_score_estimating",
-                    "description": "the estimating process of the matching score",
-                    "schema": {
-                        "type": "object",
-                        "properties": {
-                            "text_analysis": {
-                                "type": "array",
-                                "description": "text analysis of all texts",
-                                "items": {
-                                    "type": "object",
-                                    "description": "text analysis of a text",
-                                    "properties": {
-                                        "feature_analysis": {
-                                            "type": "array",
-                                            "description": "features presented in the text, including gender, hairstyle, hair color, skin color, body shape, age, tops, bottoms, shoes, hats, carrying items, etc. Each list item contains only ONE feature above.",
-                                            "items": {
-                                                "type": "object",
-                                                "description": "feature analysis of a feature item of the text",
-                                                "properties": {
-                                                    "feature_desciption": {
-                                                        "type": "string",
-                                                        "description": "the description of one feature in the text"
-                                                    },
-                                                    "presentation": {
-                                                        "type": "array",
-                                                        "description": "indicates if this text feature item presented in each image",
-                                                        "items": {
-                                                            "type": "boolean",
-                                                            "description": "indicates if this text feature item presented in an image"
-                                                        }
-                                                    }
-                                                },
-                                                "required": ["feature_desciption", "presentation"],
-                                                "additionalProperties": False
-                                            }
-                                        },
-                                        "score": {
-                                            "type": "array",
-                                            "description": "The matching score between the text and each image",
-                                            "items": {
-                                                "type": "object",
-                                                "description": "The matching score between the text and an image",
-                                                "properties": {
-                                                    "part1_score": {
-                                                        "type": "integer",
-                                                        "description": "The part1 matching score between the text and an image",
-                                                        "enum": list(range(8))
-                                                    },
-                                                    "part2_score": {
-                                                        "type": "integer",
-                                                        "description": "The part2 matching score between the text and an image",
-                                                        "enum": list(range(4))
-                                                    },
-                                                    "total_score": {
-                                                        "type": "integer",
-                                                        "description": "The sum of part1 and part2",
-                                                        "enum": list(range(11))
-                                                    }
-                                                },
-                                                "required": ["part1_score", "part2_score", "total_score"],
-                                                "additionalProperties": False,
-                                            }
-                                        }
+            response_format={
+                'type': 'json_object',
+                "schema": {
+                            "type": "list",
+                            "description": "list of all steps",
+                            "items": {
+                                "type": "object",
+                                "description": "a step",
+                                "properties": {
+                                    "explaination": {
+                                        "type": "string",
+                                        "description": "what operation is done in this step"
                                     },
-                                    "required": ["feature_analysis", "score"],
-                                    "additionalProperties": False,
+                                    "output": {
+                                        "type": "string",
+                                        "description": "the equation after this step is done"
+                                    }
                                 }
                             }
-                        },
-                        "required": ["text_analysis"],
-                        "additionalProperties": False,
-                    },
-                    "strict": True,
-                },
-            },
-            top_p=0
-        ).output_text
+                        }
+            })
+        # response = client.responses.create(
+        #     model="deepseek-chat",
+        #     input=[
+        #         {
+        #             "role": "user",
+        #             "content": content + [
+        #                 {"type": "input_text", "text": prompt_user},
+        #             ],
+        #         }
+        #     ],
+        #     text={
+        #         "format": {
+        #             "type": "json_schema",
+        #             "name": "matching_score_estimating",
+        #             "description": "the estimating process of the matching score",
+        #             "schema": {
+        #                 "type": "object",
+        #                 "properties": {
+        #                     "text_analysis": {
+        #                         "type": "array",
+        #                         "description": "text analysis of all texts",
+        #                         "items": {
+        #                             "type": "object",
+        #                             "description": "text analysis of a text",
+        #                             "properties": {
+        #                                 "feature_analysis": {
+        #                                     "type": "array",
+        #                                     "description": "features presented in the text, including gender, hairstyle, hair color, skin color, body shape, age, tops, bottoms, shoes, hats, carrying items, etc. Each list item contains only ONE feature above.",
+        #                                     "items": {
+        #                                         "type": "object",
+        #                                         "description": "feature analysis of a feature item of the text",
+        #                                         "properties": {
+        #                                             "feature_desciption": {
+        #                                                 "type": "string",
+        #                                                 "description": "the description of one feature in the text"
+        #                                             },
+        #                                             "presentation": {
+        #                                                 "type": "array",
+        #                                                 "description": "indicates if this text feature item presented in each image",
+        #                                                 "items": {
+        #                                                     "type": "boolean",
+        #                                                     "description": "indicates if this text feature item presented in an image"
+        #                                                 }
+        #                                             }
+        #                                         },
+        #                                         "required": ["feature_desciption", "presentation"],
+        #                                         "additionalProperties": False
+        #                                     }
+        #                                 },
+        #                                 "score": {
+        #                                     "type": "array",
+        #                                     "description": "The matching score between the text and each image",
+        #                                     "items": {
+        #                                         "type": "object",
+        #                                         "description": "The matching score between the text and an image",
+        #                                         "properties": {
+        #                                             "part1_score": {
+        #                                                 "type": "integer",
+        #                                                 "description": "The part1 matching score between the text and an image",
+        #                                                 "enum": list(range(8))
+        #                                             },
+        #                                             "part2_score": {
+        #                                                 "type": "integer",
+        #                                                 "description": "The part2 matching score between the text and an image",
+        #                                                 "enum": list(range(4))
+        #                                             },
+        #                                             "total_score": {
+        #                                                 "type": "integer",
+        #                                                 "description": "The sum of part1 and part2",
+        #                                                 "enum": list(range(11))
+        #                                             }
+        #                                         },
+        #                                         "required": ["part1_score", "part2_score", "total_score"],
+        #                                         "additionalProperties": False,
+        #                                     }
+        #                                 }
+        #                             },
+        #                             "required": ["feature_analysis", "score"],
+        #                             "additionalProperties": False,
+        #                         }
+        #                     }
+        #                 },
+        #                 "required": ["text_analysis"],
+        #                 "additionalProperties": False,
+        #             },
+        #             "strict": True,
+        #         },
+        #     },
+        #     top_p=0
+        # )
 
-        response = json.loads(response)
 
-        json.dump(response, open('log.json', 'w'))
+        ans = json.loads(response.choices[0].message.content)
+        print(ans)
+
+        json.dump(ans, open('log.json', 'w'))
+
+        exit()
 
         res = []
 

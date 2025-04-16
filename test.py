@@ -1,38 +1,28 @@
-from labelers.gpt_labeler import GPTLabeler, GPTCoTLabeler
 from utils.std import *
 from utils.config import *
 import requests
 import datetime
+from labelers.ds_labeler import DeepSeekLabeler
 
-data = json.load(open('dataset/CUHK-PEDES/reid_raw.json'))
+labeler = DeepSeekLabeler()
 
-dd = DefaultDict(lambda : 0)
-dd2 = DefaultDict(lambda : 0)
+data = json.load(open('test_data/reid_raw.json'))
 
-for i in data:
-    dd[i['id']] += 1
-
-for k, v in dd.items():
-    dd2[v]+=1
-
-print(dd2)
-exit()
-
-data = json.load(open('test_data/reid_raw.json'))[-6:]
-
-texts = []
 images = []
+texts = []
 
 for i in data:
+    images += ['test_data/' + i['file_path']]
     texts += i['captions']
-    images.append('test_data/' + i['file_path'])
 
-for i in texts:
+ans = []
+for ii, i in enumerate(images):
+    ans += [[]]
+    for jj, j in enumerate(texts):
+        s = labeler.label(i, j)
+        ans[-1] += [s]
+        print('-' * 10, ii, ' ', jj, s)
+
+for i in ans:
     print(i)
 
-for i in images:
-    print(i)
-
-labeler = GPTCoTLabeler()
-
-print(labeler.label(images, texts))
