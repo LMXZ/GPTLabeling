@@ -1,12 +1,23 @@
 {
+    "base_url": "https://api.deepseek.com",
+    "model": "deepseek-chat",
+    "proxy2": {
+        "http": "",
+        "https": ""
+    },
     "proxy": {
         "http": "http://localhost:7890",
         "https": "http://localhost:7890"
     },
-    "selected_api_group": "4o",
+    "selected_api_group": "R1",
     "api_groups": {
+<<<<<<< HEAD
         "4o": [
             "sk-vAEDnsysRHA73Gs37Oj5QQvN5wB6IOWQN4cePKTkAGaZpMCH"
+=======
+        "R1": [
+            "sk-7a6fc78a1ce54188be564c012f14d8d5"
+>>>>>>> ffde
         ]
     }
 }

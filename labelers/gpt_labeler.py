@@ -16,7 +16,7 @@ def image_to_base64(image_path):
 def select_api_key(api_keys: List[str]):
     return api_keys[0]
 
-class GPTLabeler():
+class GPTLabeler(Labeler):
     def __init__(self, conf=config) -> None:
         self.proxy = conf['proxy']['http']
 
