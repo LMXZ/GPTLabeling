@@ -24,6 +24,14 @@ class LmdbDict:
                 for key, value in txn.cursor():
                     res.add(key.decode('utf8'))
         return res
+    
+    def items(self):
+        res = []
+        with lmdb.open(self.path) as env:
+            with env.begin() as txn:
+                for key, value in txn.cursor():
+                    res.append((key.decode('utf8'), value.decode('utf8')))
+        return res
 
 if __name__ == '__main__':
     db = LmdbDict('./db')

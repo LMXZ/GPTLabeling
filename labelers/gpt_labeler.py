@@ -5,14 +5,13 @@ from .bases import Labeler
 from utils.config import *
 import httpx
 from utils.decos import NoValidAPIKey, TryAPIKeysUntilSuccess
-import base64
 from utils.shifter import Shifter
+from utils.images import image_to_base64
 
-def image_to_base64(image_path):
-    with open(image_path, "rb") as img_file:
-        encoded_bytes = base64.b64encode(img_file.read())
-        encoded_str = encoded_bytes.decode("utf-8")
-        return encoded_str
+accesses = []
+for k, v in config['accesses'].items():
+    for i in v['api']:
+        accesses.append((v['base_url'], i))
 
 def select_api_key(api_keys: List[str]):
     return api_keys[0]
@@ -21,12 +20,8 @@ class GPTLabeler(Labeler):
     def __init__(self, conf=config) -> None:
         self.proxy = conf['proxy']['https']
         self.model = conf['model']
-        self.api = []
-        for k, v in conf['accesses'].items():
-            for i in v['api']:
-                self.api.append((v['base_url'], i))
 
-    @TryAPIKeysUntilSuccess()
+    @TryAPIKeysUntilSuccess(accesses, remove_bad_api_keys=True)
     def label(self, file_path: str, description: str, api_key: str=('', '')):
         client = OpenAI(api_key=api_key[1], http_client=httpx.Client(proxy=self.proxy), base_url=api_key[0])
         texts = '\n'.join(['"' + i + '"' for i in description])

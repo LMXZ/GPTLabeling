@@ -1,5 +1,6 @@
 from .std import *
 import openai
+from .shifter import Shifter
 
 '''
 APIConnectionError	Cause: Issue connecting to our services. RETRY
@@ -37,17 +38,25 @@ Solution: Please try the request again.
 class NoValidAPIKey(Exception):
     pass
 
+class TooManyRetries(Exception):
+    def __str__(self):
+        return "Too many retries!!"
+
 class TryAPIKeysUntilSuccess:
-    def __init__(self, remove_bad_api_keys=True) -> None:
+    def __init__(self, api_keys: List[Tuple[str, str]], remove_bad_api_keys=True) -> None:
         self.remove_bad_api_keys = remove_bad_api_keys
+        self.api_keys = Shifter(api_keys)
 
     def __call__(self, func: Callable):
         def res_func(*args, **kwargs):
-            api_keys: List[str] = args[0].api
             items_to_delete = []
-            for i, api_key in enumerate(api_keys):
+            found = False
+            for _ in range(len(self.api_keys)):
+                i, api_key = self.api_keys()
+                if i == -1:
+                    break
                 success = False
-                while True:
+                for try_cnt in range(6):
                     todo = 'SUCCESS'
 
                     kwargs2 = kwargs.copy()
@@ -55,16 +64,23 @@ class TryAPIKeysUntilSuccess:
 
                     try:
                         res = func(*args, **kwargs2)
-                    except openai.APIConnectionError or openai.APITimeoutError or openai.InternalServerError or openai.UnprocessableEntityError as e:
+                    except (openai.APIConnectionError, openai.APITimeoutError, openai.InternalServerError, openai.UnprocessableEntityError) as e:
                         todo = 'RETRY'
-                    except openai.AuthenticationError:
+                        if try_cnt >= 5:
+                            raise Exception(e, args, kwargs)
+                    except openai.AuthenticationError as e:
                         todo = 'DELETE_AND_TRY_NEXT'
-                        items_to_delete.append(i)
-                    except openai.PermissionDeniedError or openai.RateLimitError:
+                        print(api_key, 'is expired.')
+                        items_to_delete.append(api_key)
+                    except (openai.PermissionDeniedError, openai.RateLimitError) as e:
                         todo = 'TRY_NEXT'
+                    except Exception as e:
+                        raise Exception(e, args, kwargs)
                     
                     if todo == 'SUCCESS':
                         success = True
+                        found = True
+                        print(api_key, ' success')
                         break
                     if todo in ['DELETE_AND_TRY_NEXT', 'TRY_NEXT']:
                         break
@@ -72,12 +88,9 @@ class TryAPIKeysUntilSuccess:
                     break
             
             if self.remove_bad_api_keys:
-                items_to_delete.reverse()
-                for i in items_to_delete:
-                    api_keys.pop(i)
-            if success:
-                xx = api_keys.pop(0)
-                api_keys.append(xx)
+                self.api_keys.remove(items_to_delete)
+            
+            if found:
                 return res
             else:
                 raise NoValidAPIKey()

@@ -34,13 +34,14 @@ class LabelingTask:
         self.tasks: List[TaskUnit] = []
         result = LmdbDict(result)
         self.result = result
+        keys = result.keys()
         for i in tqdm(tasks):
             for j, j_id in zip(i.images, i.image_ids):
                 tu = TaskUnit(j, i.texts)
                 tu.comment = str(j_id)
                 tu.status = 2
                 for k, k_ids in zip(i.texts, i.text_ids):
-                    if not task_sign(j, k) in result.keys():
+                    if not task_sign(j, k) in keys:
                         tu.status = 0
                         break
                 self.tasks.append(tu)
