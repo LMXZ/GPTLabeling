@@ -29,12 +29,11 @@ class GPTLabeler(Labeler):
     @TryAPIKeysUntilSuccess()
     def label(self, file_path: str, description: str, api_key: str=('', '')):
         client = OpenAI(api_key=api_key[1], http_client=httpx.Client(proxy=self.proxy), base_url=api_key[0])
-        print(api_key)
         texts = '\n'.join(['"' + i + '"' for i in description])
         response = client.chat.completions.create(
             model="gpt-4o",
             temperature=0,
-            top_p=1,
+            top_p=0,
             messages=[
                 {
                     "role": "user",
@@ -46,6 +45,7 @@ Please rate it on a scale of 0 to 100.
 The score is divided into two parts, 70 points for the first part and 30 points for the second part.
 The score for the first part is: 70*(the number of features in the text that can be found in the image/the total number of features that appear in the text).
 The score for the second part indicates the level of detail of the text description, 30 points for very detailed, 0 points for completely irrelevant.
+You must answer by calling the function "answer"!
 '''                     
                         },
                     ],
@@ -102,6 +102,11 @@ The score for the second part indicates the level of detail of the text descript
             function_call={"name": "answer"}  # 强制调用特定函数
         )
 
-        res0 = json.loads(response.choices[0].message.function_call.arguments)["analysis"]
-        res = [i['part_1_score'] + i['part_2_score'] for i in res0]
+        res0 = json.loads(response.choices[0].message.function_call.arguments)
+        res = []
+        for i in res0["analysis"]:
+            cnt = [0, 0]
+            for j in i['features_analysis']:
+                cnt[j['presented']] += 1
+            res.append(cnt)
         return res, res0

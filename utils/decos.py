@@ -75,9 +75,9 @@ class TryAPIKeysUntilSuccess:
                 items_to_delete.reverse()
                 for i in items_to_delete:
                     api_keys.pop(i)
-            xx = api_keys.pop(0)
-            api_keys.append(xx)
             if success:
+                xx = api_keys.pop(0)
+                api_keys.append(xx)
                 return res
             else:
                 raise NoValidAPIKey()

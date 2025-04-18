@@ -1,21 +1,25 @@
 from threading import Semaphore
 from .std import *
 import time
+from .lmdb_dict import LmdbDict
 
 def task_sign(image: str, text: str):
     return image + ',' + text
 
 class TaskGroup:
-    def __init__(self, images, texts) -> None:
+    def __init__(self, images, texts, image_ids, text_ids) -> None:
         self.images = images
         self.texts = texts
+        self.image_ids = image_ids
+        self.text_ids = text_ids
 
 class TaskUnit:
-    def __init__(self, image, texts) -> None:
+    def __init__(self, image, texts, comment='') -> None:
         self.image = image
         self.texts = texts
         self.status = 0
         self.time = 0.0
+        self.comment = comment
     
     def assign(self):
         self.status = 1
@@ -25,16 +29,19 @@ class TaskUnit:
         self.status = 2
 
 class LabelingTask:
-    def __init__(self, tasks: List[TaskGroup], result: Dict[str, int]) -> None:
+    def __init__(self, tasks: List[TaskGroup], result: str) -> None:
         self.sema = Semaphore(1)
         self.tasks: List[TaskUnit] = []
+        result = LmdbDict(result)
         self.result = result
-        for i in tasks:
-            for j in i.images:
+        for i in tqdm(tasks):
+            for j, j_id in zip(i.images, i.image_ids):
                 tu = TaskUnit(j, i.texts)
-                for k in i.texts:
-                    if task_sign(j, k) in result.keys():
-                        tu.status = 2
+                tu.comment = str(j_id)
+                tu.status = 2
+                for k, k_ids in zip(i.texts, i.text_ids):
+                    if not task_sign(j, k) in result.keys():
+                        tu.status = 0
                         break
                 self.tasks.append(tu)
         self.p = 0
@@ -69,8 +76,15 @@ class LabelingTask:
     def report_result(self, p, result: List[int]):
         self.sema.acquire()
 
-        self.tasks[p].status = 2
-        for t, res in zip(self.tasks[p].texts, result):
-            self.result[task_sign(self.tasks[p].image, t)] = res
+        if isinstance(result, str):
+            if self.tasks[p].status == 1:
+                self.tasks[p].status = 0
+        else:
+            try:
+                for t, res in zip(self.tasks[p].texts, result):
+                    self.result[task_sign(self.tasks[p].image, t)] = str(res)
+                self.tasks[p].status = 2
+            except Exception as e:
+                print('db error: ', e)
         
         self.sema.release()
