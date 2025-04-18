@@ -23,9 +23,23 @@
         },
         "littlewheat": {
             "api": [
-                "sk-I8wPEnrGrzr3vZyxc6K3Pxs7xSgKgElXQdkmMquTlHRHdkEC"
+                "sk-I8wPEnrGrzr3vZyxc6K3Pxs7xSgKgElXQdkmMquTlHRHdkEC",
+                "sk-dqYAS1vh1qVl6cAMv5CYSErJZGVtjqKGiKJ99V0hhtauF37n",
+                "sk-9WBw885gr0WUWegN984mlpsYoLU5ea40SLoo81qOuheuQq7k",
+                "sk-PNqQcxie5rO0vJF3JH0VaxtQFweOmWnb6KdvsxWmGrJobRyD",
+                "sk-qlYELJN067QMNAega6nBmcZXTo3NzsYkJJnzBlVOzTblSwJE",
+                "sk-m5ZYBIgfD9J9YALbZR3lbavBVCPQkkuY7SeERoUckIOuZlMJ",
+                "sk-fGTh7TjmVUhHMTnD1zXoSv995bV5mwXOe5R3lxh99vdTTivz",
+                "sk-yApDRh6jZp9SHu5slUGjkigWvrb1jEuejot1NiHeSdFv1C4I"
             ],
             "base_url": "https://chatapi.littlewheat.com/v1"
+        },
+        "yuque":
+        {
+            "api": [
+                "sk-lqQlfDXRmBHIBFvODtrohQGb3MfHSjhb1h671RuJ5W1d5yyo"
+            ],
+            "base_url": "https://api.gpts.vin/v1"
         }
     }
 }

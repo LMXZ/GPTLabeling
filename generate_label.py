@@ -89,6 +89,8 @@ def work():
             error = False
             try:
                 ans, ans0 = labeler.label(task.image, task.texts)
+                print(task.comment, ans)
+                print(score(ans))
             except NoValidAPIKey as e:
                 print("All your API keys are expired.")
                 exit()
@@ -99,8 +101,6 @@ def work():
             
             if not error:
                 # js.append(ans0)
-                print(task.comment, ans)
-                print(score(ans))
                 tasks.report_result(flag, ans)
 
 thr = [Thread(target=work) for i in range(thr_cnt)]
