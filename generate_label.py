@@ -2,31 +2,14 @@ from utils.std import *
 from utils.config import *
 import requests
 import datetime
-from labelers.gpt_labeler import GPTLabeler
+from labelers.gpt_labeler import GPTLabeler, SimpleGPTLabeler
 from utils.tasks import *
 import threading
 from threading import Thread
 from utils.lmdb_dict import LmdbDict
 from utils.decos import NoValidAPIKey
 
-thr_cnt = 10
-
-# map_size定义最大储存容量，单位是kb，以下定义1TB容量 
-
-# # 添加数据和键值 
-# txn.put(key = '1', value = 'aaa') 
-# txn.put(key = '2', value = 'bbb') 
-# txn.put(key = '3', value = 'ccc') 
-  
-# # 通过键值删除数据 
-# txn.delete(key = '1') 
-  
-# # 修改数据 
-# txn.put(key = '3', value = 'ddd') 
-  
-# # 通过commit()函数提交更改 
-# txn.commit() 
-# env.close()
+thr_cnt = 50
 
 data = json.load(open(os.path.join(config['data_root'], 'reid_raw.json')))
 match_info = open('match').read().split('\n')
@@ -72,10 +55,15 @@ tasks = LabelingTask(groups, 'dataset/simple_scores_db')
 js = []
 
 def score(x: List[List[int]]):
-    return [int((i[1] / (i[0] + i[1])) * 70) + int((min(8, i[1]) / 8) * 30) for i in x]
+    if len(x) == 0:
+        return x
+    if isinstance(x[0], list):
+        return [int((i[1] / (i[0] + i[1])) * 70) + int((min(8, i[1]) / 8) * 30) for i in x]
+    else:
+        return x
 
 def work():
-    labeler = GPTLabeler()
+    labeler = SimpleGPTLabeler()
     while True:
         flag, task = tasks.get_task()
         if flag == -1:

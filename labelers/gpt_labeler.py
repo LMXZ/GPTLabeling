@@ -105,3 +105,57 @@ You must answer by calling the function "answer"!
                 cnt[j['presented']] += 1
             res.append(cnt)
         return res, res0
+
+
+class SimpleGPTLabeler(Labeler):
+    def __init__(self, conf=config) -> None:
+        self.proxy = conf['proxy']['https']
+        self.model = conf['model']
+
+    @TryAPIKeysUntilSuccess(accesses, remove_bad_api_keys=True)
+    def label(self, file_path: str, description: str, api_key: str=('', '')):
+        client = OpenAI(api_key=api_key[1], http_client=httpx.Client(proxy=self.proxy), base_url=api_key[0])
+        texts = '\n'.join([f'Text{id}: "{i}"' for id, i in enumerate(description)])
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            temperature=0,
+            top_p=0,
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_to_base64(file_path)}" }},
+                        {"type": "text", "text":
+                        f'''{texts} How closely does these texts match the image?
+Please rate it on a scale of 0 to 10. You must call the provided function "answer"!
+'''                     
+                        },
+                    ],
+                }
+            ],
+            functions=[
+                {
+                    "name": "answer",
+                    "description": "give the score of each text.",
+                    "parameters": {
+                        "type": "object",
+                        "description": "give the score of each text.",
+                        "properties": {
+                            "answer": {
+                                "type": "array",
+                                "description": "score of each text",
+                                "items": {
+                                    "type": "integer",
+                                    "description": "score of a text",
+                                    "enum": list(range(11))
+                                }
+                            }
+                        }
+                    }
+                }
+            ],
+            function_call={"name": "answer"}  # 强制调用特定函数
+        )
+
+        res0 = json.loads(response.choices[0].message.function_call.arguments)
+        return [i*10 for i in res0["answer"]], res0
