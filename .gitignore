@@ -2,5 +2,7 @@
 __pycache__
 log.json
 task_db
+scores_db
+scores_db2
 log
 temp

@@ -6,7 +6,7 @@ from labelers.gpt_labeler import GPTLabeler
 from utils.tasks import *
 import threading
 from threading import Thread
-import lmdb
+from utils.lmdb_dict import LmdbDict
 from utils.decos import NoValidAPIKey
 
 thr_cnt = 10
@@ -67,7 +67,7 @@ for i in tqdm(range(id_cnt)):
     if j != -1:
         add(j)
 
-tasks = LabelingTask(groups, 'task_db')
+tasks = LabelingTask(groups, 'dataset/simple_scores_db')
 
 js = []
 

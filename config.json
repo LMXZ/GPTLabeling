@@ -8,38 +8,26 @@
     "accesses": {
         "xiaoai": {
             "api": [
-                "sk-vAEDnsysRHA73Gs37Oj5QQvN5wB6IOWQN4cePKTkAGaZpMCH"
             ],
             "base_url": "https://xiaoai.plus/v1"
         },
         "apifox": {
             "api": [
-                "sk-Xot0jr8KJ443PDtHNYUdAwGFJqnImkynn0CIGHZiTuZIkeSf",
-                "sk-pAbZgrwzTA0nUIhEEfxgBlz5doZ5zggyBs9tZhHJnepF9Lzl",
-                "sk-eM0MvTwOiKYNY0a7LuYk37O8soO0ZQ6C6qTrZzVwn8ocZ02N",
-                "sk-oqE3ovT3mc74gKyDOyo4qDYRd90U6qxU7DMQwSegohwPZ8LL"
             ],
             "base_url": "https://aiyjg.lol/v1"
         },
         "littlewheat": {
             "api": [
-                "sk-I8wPEnrGrzr3vZyxc6K3Pxs7xSgKgElXQdkmMquTlHRHdkEC",
-                "sk-dqYAS1vh1qVl6cAMv5CYSErJZGVtjqKGiKJ99V0hhtauF37n",
-                "sk-9WBw885gr0WUWegN984mlpsYoLU5ea40SLoo81qOuheuQq7k",
-                "sk-PNqQcxie5rO0vJF3JH0VaxtQFweOmWnb6KdvsxWmGrJobRyD",
-                "sk-qlYELJN067QMNAega6nBmcZXTo3NzsYkJJnzBlVOzTblSwJE",
-                "sk-m5ZYBIgfD9J9YALbZR3lbavBVCPQkkuY7SeERoUckIOuZlMJ",
-                "sk-fGTh7TjmVUhHMTnD1zXoSv995bV5mwXOe5R3lxh99vdTTivz",
-                "sk-yApDRh6jZp9SHu5slUGjkigWvrb1jEuejot1NiHeSdFv1C4I"
+                "sk-DOm88D0w6sies71mcL233fuaI916fvuwAiHYQYlW9LYyHY76",
+                "sk-nB8kYTL2jn7ozVBibi8TsZYCrWnmforswMTiMHcBSQvESh8c",
+                "sk-QTgKihZqzb9nrx35Zkc8On1fHFp30YPJWYssqayc5GGXGAZx",
+                "sk-4WTv6eQmeD4RcjndaCyrExr2c9VDo49x2000SJJqANB3Rw8h",
+                "sk-SbaIlQvpICYPdIn6o40QHCGVWA0HVm1IPtqEREFW6sKQza3D",
+                "sk-uO93keYhiltO9iQ6iOoV4SdN6N9WolBJpMaIBfpfjQw6rglK",
+                "sk-OEPYpbqGwCwCbTmwQFm7YwDQVU01HNfl7aKMfd9UqlzL6Knz",
+                "sk-hUJr6yP0dIg8TbTjsnwXapvMOgVG0xlM2IqiTsyZb56RCplB"
             ],
             "base_url": "https://chatapi.littlewheat.com/v1"
-        },
-        "yuque":
-        {
-            "api": [
-                "sk-lqQlfDXRmBHIBFvODtrohQGb3MfHSjhb1h671RuJ5W1d5yyo"
-            ],
-            "base_url": "https://api.gpts.vin/v1"
         }
     }
 }

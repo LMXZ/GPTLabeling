@@ -2,9 +2,16 @@ from threading import Semaphore
 from .std import *
 import time
 from .lmdb_dict import LmdbDict
+from hashlib import sha256
 
 def task_sign(image: str, text: str):
-    return image + ',' + text
+    z = image + ',' + text
+    # print()
+    # print(z)
+    res = sha256((z).encode('utf8')).hexdigest()
+    # print(res)
+    # exit()
+    return res
 
 class TaskGroup:
     def __init__(self, images, texts, image_ids, text_ids) -> None:
@@ -82,10 +89,13 @@ class LabelingTask:
                 self.tasks[p].status = 0
         else:
             try:
+                if len(self.tasks[p].texts) != len(result):
+                    raise Exception("Bad response!")
                 for t, res in zip(self.tasks[p].texts, result):
                     self.result[task_sign(self.tasks[p].image, t)] = str(res)
                 self.tasks[p].status = 2
             except Exception as e:
                 print('db error: ', e)
+                self.tasks[p].status = 0
         
         self.sema.release()
